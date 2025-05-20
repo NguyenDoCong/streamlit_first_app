@@ -15,7 +15,7 @@ def get_distinct_user_ids_from_db(platform=None):
     """Get distinct user IDs from database"""
     db = get_db()
     try:
-        if platform == "x":
+        if platform == "X":
             return db.query(X.user_id).distinct().all()
         elif platform == "tiktok":
             return db.query(Tiktok.user_id).distinct().all()
@@ -35,7 +35,7 @@ def get_all_videos_from_db(platform=None):
     """Get all data from database"""
     db = get_db()
     try:
-        if platform == "x":
+        if platform == "X":
             return db.query(X).all()
         elif platform == "tiktok":
             return db.query(Tiktok).all()
@@ -55,7 +55,7 @@ def get_info_by_user_id(user_id, platform=None):
     """Get all data from database"""
     db = get_db()
     try:
-        if platform == "x":
+        if platform == "X":
             return db.query(X).filter(X.user_id == user_id).all()
         elif platform == "tiktok":
             return db.query(Tiktok).filter(Tiktok.user_id == user_id).all()
@@ -75,7 +75,7 @@ def delete_user_by_id(user_id, platform=None):
     """Delete user by ID from database"""
     db = get_db()
     try:
-        if platform == "x":
+        if platform == "X":
             db.query(X).filter(X.user_id == user_id).delete()
         elif platform == "tiktok":
             db.query(Tiktok).filter(Tiktok.user_id == user_id).delete()

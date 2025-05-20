@@ -28,10 +28,33 @@ def send_request(id="hoaminzy_hoadambut",count=20, platform="tiktok"):
         if response.status_code == 200 or response.status_code == 201:
             return True, f"Đã gửi yêu cầu thành công với ID: {id} và số lượng: {count}.", response.json()['dag_run_id']
         else:
-            return False, f"Lỗi: {response.status_code} - {response.text}", None
+            return False, f"Lỗi: {response.status_code} - {response.text}", ""
     except Exception as e:
-        return False, f"Lỗi kết nối: {str(e)}", None
+        return False, f"Lỗi kết nối: {str(e)}", ""
+    
+def stop_dag(dag_id, dag_run_id):
+    airflow_url = "http://localhost:8080"
+    endpoint = f"/api/v1/dags/{dag_id}/dagRuns/{dag_run_id}"
+    url = airflow_url + endpoint
 
+    payload = {"state": "failed"}  # hoặc "success" nếu muốn kết thúc thành công
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.patch(
+            url,
+            json=payload,
+            auth=HTTPBasicAuth("airflow", "airflow"),
+            headers=headers,
+            timeout=10
+        )
+        if response.status_code == 200:
+            return True, f"Đã gửi yêu cầu dừng DAG {dag_id} với run_id {dag_run_id}"
+        else:
+            return False, f"Lỗi khi dừng DAG: {response.status_code} - {response.text}"
+    except Exception as e:
+        return False, f"Lỗi khi gửi request dừng DAG: {e}"
+    
 #main method
 if __name__ == "__main__":
     send_request()
