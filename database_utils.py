@@ -56,15 +56,15 @@ def get_info_by_user_id(user_id, platform=None):
     db = get_db()
     try:
         if platform == "X":
-            return db.query(X).filter(X.user_id == user_id).all()
+            return db.query(X).filter(X.user_id == user_id, X.status=="SUCCESS").all()
         elif platform == "tiktok":
-            return db.query(Tiktok).filter(Tiktok.user_id == user_id).all()
+            return db.query(Tiktok).filter(Tiktok.user_id == user_id, Tiktok.status=='SUCCESS').all()
         elif platform == "instagram":
-            return db.query(Instagram).filter(Instagram.user_id == user_id).all()
+            return db.query(Instagram).filter(Instagram.user_id == user_id, Instagram.status=='SUCCESS').all()
         else:
             # Default to Facebook if no platform is specified
             # or if the platform is not recognized
-            return db.query(Facebook).filter(Facebook.user_id == user_id).all()
+            return db.query(Facebook).filter(Facebook.user_id == user_id, Facebook.status=='SUCCESS').all()
     except SQLAlchemyError as e:
         logger.error(f"Error when query database: {str(e)}")
         return None

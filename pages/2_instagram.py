@@ -107,33 +107,37 @@ def add_instagram_user():
                 match = re.search(r"Downloaded\s+(\d+)\s+new videos", content)
                 if match:
                     new_videos = match.group(1)
-                    downloaded = new_videos
+                    downloaded = content.count("Downloaded successfully")
                 else:
                     match = re.search(r"Number of downloads to process:\s*(\d+)", content)
                     if match:
                         new_videos = match.group(1)
-                        downloaded = content.count("Processing audio file")
+                        downloaded = content.count("Processing audio with duration")
                     else:
-                        new_videos = 0
-                        downloaded = 0
+                        match = re.search(r"New videos:\s*(\d+)", content)
+                        if match:
+                            new_videos = match.group(1)
+                            downloaded = content.count("Downloaded successfully")
+                        else:
+                            new_videos = 0
+                            downloaded = 0
                 
                 return new_videos, downloaded, "thành công"
             elif "Task is not able to be run" in content or "Error" in content and "unable to obtain file audio codec with ffprobe" not in content and "Error transcripting video" not in content and "WARNING - ERROR" not in content:
                 return "", "", "thất bại"
             elif "Downloading" in content or "Processing" in content or "Extracting videos" in content:
-                match = re.search(r"New videos to download:\s*(\d+)", content)
-                if match:
-                    new_videos = match.group(1)
-                    downloaded = content.count("Downloaded video")
+                if "Starting batch download..." in content:
+                    downloaded = content.count("Downloaded successfully")
                 else:
                     match = re.search(r"Number of downloads to process:\s*(\d+)", content)
                     if match:
-                        new_videos = match.group(1)
-                        downloaded = content.count("Processing audio file")
+                        # new_videos = match.group(1)
+                        downloaded = content.count("Processing audio with duration")
                     else:
-                        new_videos = 0
+                        # new_videos = 0
                         downloaded = 0
-                return new_videos, downloaded, "đang chạy"
+                
+                return "", downloaded, "đang chạy"
             elif "Scrolling" in content:
                 return "", "", "đang tìm video"
             else:
@@ -160,13 +164,18 @@ def add_instagram_user():
 
     # Hàm cập nhật trạng thái task
     def get_status_list():
-        download_log_file_path = f"/home/docon/projects/airflow-docker/logs/dag_id={dag_id}/run_id={dag_run_id}/task_id=instagram_videos_scraper_task/attempt=1.log"
+        get_links_log_file_path = f"/home/docon/projects/airflow-docker/logs/dag_id={dag_id}/run_id={dag_run_id}/task_id=get_links_task/attempt=1.log"
+        download_log_file_path = f"/home/docon/projects/airflow-docker/logs/dag_id={dag_id}/run_id={dag_run_id}/task_id=batch_download_task/attempt=1.log"
         transcript_log_file_path = f"/home/docon/projects/airflow-docker/logs/dag_id={dag_id}/run_id={dag_run_id}/task_id=audio_to_transcript_task/attempt=1.log"
-        new_videos, downloaded_videos, download_task_state = get_task_status_from_log(download_log_file_path)
-        new_transcripts, transcripted, transcript_task_state = get_task_status_from_log(transcript_log_file_path)
-        return [{"Task": "Download", "Trạng thái": download_task_state, "Số video mới": new_videos, "Số video đã tải về": downloaded_videos}, 
-                {"Task": "Chuyển đổi video thành transcript", "Trạng thái": transcript_task_state, "Số video mới": new_transcripts, "Số video đã chuyển đổi": transcripted}]
-        
+        new_links, _, get_links_task_state = get_task_status_from_log(get_links_log_file_path)
+        _, downloaded_videos, download_task_state = get_task_status_from_log(download_log_file_path)
+        _, transcripted, transcript_task_state = get_task_status_from_log(transcript_log_file_path)
+        return [
+            {'Task': 'Lấy link video', 'Trạng thái': f"{get_links_task_state}({new_links})"},
+            {'Task': 'Download', 'Trạng thái': f"{download_task_state} ({downloaded_videos}/{new_links})"},
+            {'Task': 'Chuyển đổi video thành transcript', 'Trạng thái': f"{transcript_task_state} ({transcripted}/{new_links})"}
+        ]
+    
     def check_task_status():
         if task_status_list[0]["Trạng thái"] == "thành công" and task_status_list[1]["Trạng thái"] == "thành công":
             return True
@@ -204,8 +213,8 @@ def add_instagram_user():
         del st.session_state['dag_run_id']
         show_user_info(user_id)
 
-    if st.button("Close"):
-        st.rerun()
+    # if st.button("Close"):
+    #     st.rerun()
 
 st.title('Danh sách người dùng instagram')    
 display_instagram_users()
